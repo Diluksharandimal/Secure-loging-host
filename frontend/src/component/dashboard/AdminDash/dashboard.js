@@ -17,14 +17,14 @@ const Dashboard = () => {
             setAdminName(admin.name);
 
             // Fetch activity logs
-            axios.get('https://secure-loging-system-server.vercel.app/admin/activity_logs', {
+            axios.get('https://secure-loging-host-server.vercel.app/admin/activity_logs', {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             .then(response => setActivityLogs(response.data))
             .catch(error => toast.error("Failed to fetch activity logs"));
 
             // Fetch users
-            axios.get('https://secure-loging-system-server.vercel.app/admin/users', {
+            axios.get('https://secure-loging-host-server.vercel.app/admin/users', {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             .then(response => setUsers(response.data))
@@ -36,7 +36,7 @@ const Dashboard = () => {
 
     const handleRemoveUser = (userId) => {
         const token = localStorage.getItem('token');
-        axios.delete(`https://secure-loging-system-server.vercel.app/admin/users/${userId}`, {
+        axios.delete(`https://secure-loging-host-server.vercel.app/admin/users/${userId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
         .then(() => {

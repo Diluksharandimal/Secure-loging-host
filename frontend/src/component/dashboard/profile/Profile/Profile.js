@@ -14,7 +14,7 @@ const Profile = () => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
-            axios.get('https://secure-loging-system-server.vercel.app/users/profile', {
+            axios.get('https://secure-loging-host-server.vercel.app/users/profile', {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             .then(response => {
@@ -32,7 +32,7 @@ const Profile = () => {
     // Handle updating user profile
     const handleUpdate = () => {
         const token = localStorage.getItem('token');
-        axios.put('https://secure-loging-system-server.vercel.app/users/profile', 
+        axios.put('https://secure-loging-host-server.vercel.app/users/profile', 
             { name: updatedName, email: updatedEmail }, 
             {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -51,7 +51,7 @@ const Profile = () => {
     // Handle deleting user account
     const handleDelete = () => {
         const token = localStorage.getItem('token');
-        axios.delete('https://secure-loging-system-server.vercel.app/users/profile', {
+        axios.delete('https://secure-loging-host-server.vercel.app/users/profile', {
             headers: { 'Authorization': `Bearer ${token}` }
         })
         .then(() => {
