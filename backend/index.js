@@ -48,7 +48,7 @@ async function authenticateToken(req, res, next) {
 // Function to log user actions
 async function logAction(userId, action) {
     try {
-        const sql = "INSERT INTO activity_logs (user_id, action) VALUES (?, ?)";
+        const sql = "INSERT INTO audit_logs (user_id, action) VALUES (?, ?)";
         await pool.execute(sql, [userId, action]);
     } catch (err) {
         console.error("Error logging action:", err.message);
@@ -56,23 +56,23 @@ async function logAction(userId, action) {
 }
 
 // Signup route
-app.post("/SignUp", async (req, res) => {
-    const { name, email, password } = req.body;
+app.post("/signup", async (req, res) => {
+    const { name, email, password, userType } = req.body;
 
     if (!name || !email || !password) {
         return res.status(400).json({ error: "Please fill in all fields" });
     }
 
     try {
-        const checkEmailQuery = "SELECT * FROM users WHERE email = ?";
+        const checkEmailQuery = "SELECT * FROM signs WHERE email = ?";
         const [results] = await pool.execute(checkEmailQuery, [email]);
 
         if (results.length > 0) {
             return res.status(409).json({ error: "Email already exists." });
         }
 
-        const sql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
-        await pool.execute(sql, [name, email, password]);  // Store plain password
+        const sql = "INSERT INTO signs (name, email, password, userType) VALUES (?, ?, ?, ?)";
+        await pool.execute(sql, [name, email, password, userType]); // Store plain password
 
         await logAction(null, "Registered a new user: " + name);
         res.status(201).json({ message: "User Registered Successfully" });
@@ -83,7 +83,7 @@ app.post("/SignUp", async (req, res) => {
 });
 
 // Signin route
-app.post("/SignIn", async (req, res) => {
+app.post("/signin", async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -91,17 +91,17 @@ app.post("/SignIn", async (req, res) => {
     }
 
     try {
-        const sql = "SELECT * FROM users WHERE email = ?";
+        const sql = "SELECT * FROM signs WHERE email = ?";
         const [data] = await pool.execute(sql, [email]);
 
-        if (data.length === 0 || data[0].password !== password) {  // Compare plain password
+        if (data.length === 0 || data[0].password !== password) { // Compare plain password
             return res.status(401).json({ error: "Invalid email or password" });
         }
 
         const user = data[0];
-        const token = jwt.sign({ id: user.id, name: user.name }, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user.id, name: user.name }, JWT_SECRET, { expiresIn: '2h' });
         await logAction(user.id, "Signed in");
-        res.json({ message: "Success", token });
+        res.json({ message: "Login Successful", token });
     } catch (err) {
         console.error("Error during signin:", err.message);
         res.status(500).json({ error: "Error during signin" });
@@ -113,7 +113,7 @@ app.get("/users/profile", authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     try {
-        const sql = "SELECT id, name, email FROM users WHERE id = ?";
+        const sql = "SELECT id, name, email FROM signs WHERE id = ?";
         const [data] = await pool.execute(sql, [userId]);
 
         if (data.length === 0) {
