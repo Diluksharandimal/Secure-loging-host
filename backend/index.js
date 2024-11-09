@@ -7,21 +7,19 @@ require('dotenv').config();
 
 const app = express();
 
-// CORS Setup to allow frontend requests
+// CORS Setup to allow requests from any frontend origin (any port)
 app.use(cors({
-    origin: 'https://secure-loging-system-client.vercel.app',
+    origin: '*', // Allows requests from any origin
     credentials: true
 }));
 
-// Security headers for added protection
+// Security headers
 app.use(helmet());
-
-// Middleware to parse JSON data
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
-// MySQL connection pool setup
+// MySQL connection pool
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USERNAME,
@@ -38,18 +36,20 @@ async function authenticateToken(req, res, next) {
     const token = authHeader && authHeader.split(' ')[1];
     if (!token) return res.status(401).json({ error: "Access Denied: No Token Provided" });
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ error: "Invalid Token" });
+    try {
+        const user = jwt.verify(token, JWT_SECRET);
         req.user = user;
         next();
-    });
+    } catch (err) {
+        res.status(403).json({ error: "Invalid Token" });
+    }
 }
 
 // Function to log user actions
 async function logAction(userId, action) {
     try {
         const sql = "INSERT INTO activity_logs (user_id, action) VALUES (?, ?)";
-        const [result] = await pool.execute(sql, [userId, action]);
+        await pool.execute(sql, [userId, action]);
     } catch (err) {
         console.error("Error logging action:", err.message);
     }
@@ -72,7 +72,7 @@ app.post("/SignUp", async (req, res) => {
         }
 
         const sql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
-        await pool.execute(sql, [name, email, password]);
+        await pool.execute(sql, [name, email, password]);  // Store plain password
 
         await logAction(null, "Registered a new user: " + name);
         res.status(201).json({ message: "User Registered Successfully" });
@@ -94,7 +94,7 @@ app.post("/SignIn", async (req, res) => {
         const sql = "SELECT * FROM users WHERE email = ?";
         const [data] = await pool.execute(sql, [email]);
 
-        if (data.length === 0 || data[0].password !== password) {
+        if (data.length === 0 || data[0].password !== password) {  // Compare plain password
             return res.status(401).json({ error: "Invalid email or password" });
         }
 
@@ -127,6 +127,7 @@ app.get("/users/profile", authenticateToken, async (req, res) => {
     }
 });
 
+// Health check route
 app.get("/", (req, res) => {
     res.send("Server is running");
 });
