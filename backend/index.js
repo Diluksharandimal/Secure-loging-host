@@ -6,10 +6,10 @@ const helmet = require("helmet");
 require('dotenv').config();
 
 const app = express();
-
+//dtdytdydy rdydy dyyfdy ydyt
 // CORS Setup to allow frontend requests
 const cors= {
-    origin: 'https://secure-loging-host-client.vercel.app', // The client URL
+    origin: '*', // The client URL
     methods: 'GET,POST,PUT,DELETE', // Allow the necessary HTTP methods
     allowedHeaders: 'Content-Type,Authorization', // Allow necessary headers
     credentials: true, // Allow credentials (cookies, etc.)
