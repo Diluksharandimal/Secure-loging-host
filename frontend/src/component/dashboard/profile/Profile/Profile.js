@@ -10,62 +10,64 @@ const Profile = () => {
     const [updatedEmail, setUpdatedEmail] = useState("");
     const navigate = useNavigate();
 
-    // Fetch logged-in user details
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            axios.get('https://secure-loging-host-server.vercel.app/users/profile', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            .then(response => {
-                setUser(response.data);
-                setUpdatedName(response.data.name);
-                setUpdatedEmail(response.data.email);
-            })
-            .catch(error => {
-                console.error("There was an error fetching the user data!", error);
-                toast.error("Unable to load profile data.");
-            });
-        }
-    }, []);
+        const fetchUserData = async () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const response = await axios.get('https://secure-loging-host-server.vercel.app/users/profile', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    setUser(response.data);
+                    setUpdatedName(response.data.name);
+                    setUpdatedEmail(response.data.email);
+                } catch (error) {
+                    console.error("Error fetching user data:", error.response || error.message);
+                    toast.error("Unable to load profile data. Please make sure you are logged in.");
+                }
+            } else {
+                toast.error("Token not found. Please login.");
+                navigate("/login"); // Redirect to login if token is missing
+            }
+        };
 
-    // Handle updating user profile
-    const handleUpdate = () => {
+        fetchUserData();
+    }, [navigate]);
+
+    const handleUpdate = async () => {
         const token = localStorage.getItem('token');
-        axios.put('https://secure-loging-host-server.vercel.app/users/profile', 
-            { name: updatedName, email: updatedEmail }, 
-            {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            .then(response => {
-                toast.success("Profile updated successfully!");
-                setUser(response.data);
-                setIsEditing(false);
-            })
-            .catch(error => {
-                console.error("There was an error updating the profile!", error);
-                toast.error("Failed to update profile.");
-            });
+        try {
+            const response = await axios.put(
+                'https://secure-loging-host-server.vercel.app/users/profile',
+                { name: updatedName, email: updatedEmail },
+                {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }
+            );
+            toast.success("Profile updated successfully!");
+            setUser(response.data);
+            setIsEditing(false);
+        } catch (error) {
+            console.error("Error updating profile:", error.response || error.message);
+            toast.error("Failed to update profile.");
+        }
     };
 
-    // Handle deleting user account
-    const handleDelete = () => {
+    const handleDelete = async () => {
         const token = localStorage.getItem('token');
-        axios.delete('https://secure-loging-host-server.vercel.app/users/profile', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        })
-        .then(() => {
+        try {
+            await axios.delete('https://secure-loging-host-server.vercel.app/users/profile', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             toast.success("Account deleted successfully.");
             localStorage.removeItem('token'); // Clear token
             navigate('/login'); // Redirect to login page
-        })
-        .catch(error => {
-            console.error("There was an error deleting the account!", error);
+        } catch (error) {
+            console.error("Error deleting account:", error.response || error.message);
             toast.error("Failed to delete account.");
-        });
+        }
     };
 
-    // Navigate back to home page
     const handleBack = () => {
         navigate('/'); // Redirect to the home page
     };
@@ -100,8 +102,8 @@ const Profile = () => {
                         </>
                     ) : (
                         <>
-                            <p><strong>Name:</strong> {user.name}</p>
-                            <p><strong>Email:</strong> {user.email}</p>
+                            <p><strong>Name:</strong> {user.name || "N/A"}</p>
+                            <p><strong>Email:</strong> {user.email || "N/A"}</p>
                             <button style={styles.btn} onClick={() => setIsEditing(true)}>Edit</button>
                         </>
                     )}
@@ -120,6 +122,7 @@ const Profile = () => {
 
 export default Profile;
 
+// CSS Styles
 const styles = {
     backgroundRadialGradient: {
         minHeight: '100vh',
