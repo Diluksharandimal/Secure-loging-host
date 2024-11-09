@@ -1,178 +1,151 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const mysql = require('mysql');
-const jwt = require('jsonwebtoken');
-const cors = require('cors');
+const express = require("express");
+const mysql = require("mysql2");
+const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const helmet = require("helmet");
+require('dotenv').config();
+
 const app = express();
 
-// Middleware setup
-app.use(bodyParser.json());
-app.use(cors());
+// CORS Setup to allow frontend requests
+app.use(cors({
+  origin: 'https://secure-loging-host-client.vercel.app', // Replace with your frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+}));
 
-// Database connection (ensure your credentials are correct)
+// Security headers for added protection
+app.use(helmet());
+
+// Middleware to parse JSON data
+app.use(express.json());
+
+// MySQL connection setup
 const db = mysql.createConnection({
-    host: 'localhost', // Update with your database host
-    user: 'root',      // Update with your database user
-    password: '',      // Update with your database password
-    database: 'your_database_name' // Update with your database name
+    host: process.env.DB_HOST,
+    user: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    connectTimeout: 10000, // Increase to 10 seconds
 });
 
+// Check MySQL connection
 db.connect((err) => {
-    if (err) {
-        console.error('Database connection failed:', err);
-    } else {
-        console.log('Connected to MySQL database.');
-    }
+  if (err) {
+    console.error("MySQL connection error:", err.message);
+    return;
+  }
+  console.log("Connected to MySQL database.");
 });
 
-// JWT Secret
-const JWT_SECRET = 'your_jwt_secret';  // Change to your secret key
-
-// SignUp route
-app.post('/SignUp', async (req, res) => {
-    const { name, email, password } = req.body;
-
-    console.log('Received data:', req.body); // Log incoming data to verify
-
-    if (!name || !email || !password) {
-        return res.status(400).json({ message: 'All fields are required.' });
-    }
-
-    // Directly use password without hashing (not recommended for production)
-    try {
-        const query = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
-        db.query(query, [name, email, password], (err, result) => {
-            if (err) {
-                console.error('Error inserting user into database:', err);
-                return res.status(500).json({ message: 'Error registering user.' });
-            }
-
-            // Generate JWT token
-            const token = jwt.sign({ id: result.insertId, email: email }, JWT_SECRET, {
-                expiresIn: '1h',
-            });
-
-            // Send response with token
-            res.status(201).json({ message: 'User registered successfully!', token });
-        });
-    } catch (error) {
-        console.error('Error processing sign-up:', error);
-        res.status(500).json({ message: 'Error processing sign-up.' });
-    }
-});
-
-// SignIn route
-app.post('/SignIn', async (req, res) => {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required.' });
-    }
-
-    try {
-        const query = 'SELECT * FROM users WHERE email = ? AND password = ?';
-        db.query(query, [email, password], (err, result) => {
-            if (err) {
-                console.error('Database query error:', err);
-                return res.status(500).json({ message: 'Error during sign-in.' });
-            }
-
-            if (result.length === 0) {
-                return res.status(401).json({ message: 'Invalid credentials.' });
-            }
-
-            const user = result[0];
-
-            // Generate JWT token
-            const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
-                expiresIn: '1h',
-            });
-
-            res.status(200).json({ message: 'Sign-in successful!', token });
-        });
-    } catch (error) {
-        console.error('Error during sign-in:', error);
-        res.status(500).json({ message: 'Error during sign-in.' });
-    }
-});
+const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
 // Middleware to authenticate JWT token
-const authenticateToken = (req, res, next) => {
-    const token = req.headers['authorization'];
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: "Access Denied: No Token Provided" });
 
-    if (!token) {
-        return res.status(403).json({ message: 'Token is required for authentication.' });
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: "Invalid Token" });
+    req.user = user;
+    next();
+  });
+}
+
+// Function to log user actions
+function logAction(userId, action) {
+  const sql = "INSERT INTO activity_logs (user_id, action) VALUES (?, ?)";
+  db.query(sql, [userId, action], (err) => {
+    if (err) {
+      console.error("Error logging action:", err.message);
+    }
+  });
+}
+
+// Signup route
+app.post("/SignUp", (req, res) => {
+  const { name, email, password } = req.body;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: "Please fill in all fields" });
+  }
+
+  const checkEmailQuery = "SELECT * FROM users WHERE email = ?";
+  db.query(checkEmailQuery, [email], (err, results) => {
+    if (err) {
+      console.error("Error checking email:", err.message);
+      return res.status(500).json({ error: "Error checking email" });
+    }
+    if (results.length > 0) {
+      return res.status(409).json({ error: "Email already exists." });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({ message: 'Invalid or expired token.' });
-        }
-        req.user = user;
-        next();
+    const sql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
+    db.query(sql, [name, email, password], (err) => {
+      if (err) {
+        console.error("Error registering user:", err.message);
+        return res.status(500).json({ error: "Error registering user" });
+      }
+
+      logAction(null, "Registered a new user: " + name);
+      res.status(201).json({ message: "User Registered Successfully" });
     });
-};
-
-// Fetch user profile
-app.get('/profile', authenticateToken, (req, res) => {
-    const userId = req.user.id;
-
-    const query = 'SELECT id, name, email FROM users WHERE id = ?';
-    db.query(query, [userId], (err, result) => {
-        if (err) {
-            console.error('Error fetching user profile:', err);
-            return res.status(500).json({ message: 'Error fetching profile.' });
-        }
-
-        if (result.length === 0) {
-            return res.status(404).json({ message: 'User not found.' });
-        }
-
-        res.status(200).json(result[0]);
-    });
+  });
 });
 
-// Fetch admin name and activity log of users
-app.get('/admin/logs', authenticateToken, (req, res) => {
-    // Check if the logged-in user is an admin
-    if (req.user.email !== 'admin@example.com') {
-        return res.status(403).json({ message: 'Access denied. Admins only.' });
+// Signin route
+app.post("/SignIn", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Please fill in all fields" });
+  }
+
+  const sql = "SELECT * FROM users WHERE email = ?";
+  db.query(sql, [email], (err, data) => {
+    if (err) {
+      console.error("Error during signin:", err.message);
+      return res.status(500).json({ error: "Error during signin" });
+    }
+    if (data.length === 0 || data[0].password !== password) {
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // Query to fetch admin details
-    const adminQuery = 'SELECT name FROM users WHERE email = "admin@example.com"';
-    db.query(adminQuery, (err, result) => {
-        if (err) {
-            console.error('Error fetching admin name:', err);
-            return res.status(500).json({ message: 'Error fetching admin details.' });
-        }
-
-        if (result.length === 0) {
-            return res.status(404).json({ message: 'Admin not found.' });
-        }
-
-        const adminName = result[0].name;
-
-        // Query to fetch user activity logs
-        const logsQuery = 'SELECT * FROM user_activity_logs ORDER BY timestamp DESC';
-        db.query(logsQuery, (err, logs) => {
-            if (err) {
-                console.error('Error fetching user activity logs:', err);
-                return res.status(500).json({ message: 'Error fetching logs.' });
-            }
-
-            res.status(200).json({ adminName, logs });
-        });
-    });
+    const user = data[0];
+    const token = jwt.sign({ id: user.id, name: user.name }, JWT_SECRET, { expiresIn: '1h' });
+    logAction(user.id, "Signed in");
+    res.json({ message: "Success", token });
+  });
 });
 
-// Test root route (for verifying server is running)
-app.get('/', (req, res) => {
-    res.send('Server is running...');
+// Get User Profile route
+app.get("/users/profile", authenticateToken, (req, res) => {
+  const userId = req.user.id;
+
+  const sql = "SELECT id, name, email FROM users WHERE id = ?";
+  db.query(sql, [userId], (err, data) => {
+    if (err) {
+      console.error("Error fetching user profile:", err.message);
+      return res.status(500).json({ error: "Error fetching user profile" });
+    }
+    if (data.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({ user: data[0] });
+  });
+});
+
+app.get("/", (req, res) => {
+  res.send("Server is running");
 });
 
 // Start the server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8087;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
