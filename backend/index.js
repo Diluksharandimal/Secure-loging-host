@@ -10,7 +10,9 @@ const app = express();
 // CORS Setup to allow frontend requests
 app.use(cors({
     origin: 'https://secure-loging-host-client.vercel.app',
-    credentials: true
+    credentials: true, // Allow cookies and other credentials
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow necessary HTTP methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow necessary headers
 }));
 
 // Security headers for added protection
@@ -137,9 +139,8 @@ app.get("/users/profile", authenticateToken, (req, res) => {
     });
 });
 
-app.get("/", (req, res) => {
-    res.send("Server is running");
-});
+// Handle Preflight OPTIONS requests
+app.options('*', cors());
 
 // Start the server
 const PORT = process.env.PORT || 8087;
