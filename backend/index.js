@@ -9,7 +9,7 @@ const app = express();
 
 // CORS Setup to allow frontend requests
 app.use(cors({
-  origin: 'https://secure-loging-host-client.vercel.app', // Replace with your frontend URL
+  origin: 'https://secure-loging-host-server.vercel.app', // Replace with your frontend URL
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
