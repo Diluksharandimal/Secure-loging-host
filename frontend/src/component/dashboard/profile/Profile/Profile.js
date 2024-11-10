@@ -16,7 +16,7 @@ const Profile = () => {
             if (token) {
                 try {
                     const response = await axios.get('https://secure-loging-host-server.vercel.app/users/profile', {
-                        headers: { 'Authorization': `Bearer ${token}` }
+                        headers: { 'Authorization': `Bearer ${token}` } // Corrected this line
                     });
                     setUser(response.data);
                     setUpdatedName(response.data.name);
@@ -41,7 +41,7 @@ const Profile = () => {
                 'https://secure-loging-host-server.vercel.app/users/profile',
                 { name: updatedName, email: updatedEmail },
                 {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 'Authorization': `Bearer ${token}` } // Corrected this line
                 }
             );
             toast.success("Profile updated successfully!");
@@ -57,7 +57,7 @@ const Profile = () => {
         const token = localStorage.getItem('token');
         try {
             await axios.delete('https://secure-loging-host-server.vercel.app/users/profile', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${token}` } // Corrected this line
             });
             toast.success("Account deleted successfully.");
             localStorage.removeItem('token'); // Clear token
@@ -127,18 +127,7 @@ const styles = {
     backgroundRadialGradient: {
         minHeight: '100vh',
         backgroundColor: 'hsl(218, 41%, 15%)',
-        backgroundImage: `radial-gradient(650px circle at 0% 0%, 
-            hsl(218, 41%, 35%) 15%, 
-            hsl(218, 41%, 30%) 35%, 
-            hsl(218, 41%, 20%) 75%, 
-            hsl(218, 41%, 19%) 80%, 
-            transparent 100%),
-            radial-gradient(1250px circle at 100% 100%, 
-            hsl(218, 41%, 45%) 15%, 
-            hsl(218, 41%, 30%) 35%, 
-            hsl(218, 41%, 20%) 75%, 
-            hsl(218, 41%, 19%) 80%, 
-            transparent 100%)`,
+        backgroundImage: 'radial-gradient(650px circle at 0% 0%, hsl(218, 41%, 35%) 15%, hsl(218, 41%, 30%) 35%, hsl(218, 41%, 20%) 75%, hsl(218, 41%, 19%) 80%, transparent 100%), radial-gradient(1250px circle at 100% 100%, hsl(218, 41%, 45%) 15%, hsl(218, 41%, 30%) 35%, hsl(218, 41%, 20%) 75%, hsl(218, 41%, 19%) 80%, transparent 100%)',
         position: 'relative',
         display: 'flex',
         alignItems: 'center',

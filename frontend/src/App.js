@@ -6,11 +6,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import SignIn from './component/SigIn/SignIn';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Home from './component/Home/Home';
-import Profile from './component/dashboard/profile/Profile/Profile';
+
 import ASigIn from './component/SigIn/Admin/Asignin';
 import AsigIn from './component/SigIn/Admin/Asignin';
 import Dashboard from './component/dashboard/AdminDash/dashboard';
 import SignUp from './component/Signup/SignUp';
+import Profile from './component/dashboard/profile/Profile/Profile';
 
 
 
