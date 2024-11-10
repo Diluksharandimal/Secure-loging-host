@@ -8,7 +8,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors({
-    origin: 'https://secure-loging-host-client.vercel.app',
+    origin: '*',
 }));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
