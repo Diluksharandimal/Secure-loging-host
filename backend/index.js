@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const app = express();
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: "https://secure-loging-host-client.vercel.app" }));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
