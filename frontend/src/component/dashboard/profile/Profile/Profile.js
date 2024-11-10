@@ -13,21 +13,21 @@ const Profile = () => {
     useEffect(() => {
         const fetchUserData = async () => {
             const token = localStorage.getItem('token');
-            if (!token) {
+            if (token) {
+                try {
+                    const response = await axios.get('https://secure-loging-host-server.vercel.app/users/profile', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    setUser(response.data);
+                    setUpdatedName(response.data.name);
+                    setUpdatedEmail(response.data.email);
+                } catch (error) {
+                    console.error("Error fetching user data:", error.response || error.message);
+                    toast.error("Unable to load profile data. Please make sure you are logged in.");
+                }
+            } else {
                 toast.error("Token not found. Please login.");
-                navigate("/login");
-                return;
-            }
-            try {
-                const response = await axios.get('https://secure-loging-host-server.vercel.app/users/profile', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                setUser(response.data);
-                setUpdatedName(response.data.name);
-                setUpdatedEmail(response.data.email);
-            } catch (error) {
-                console.error("Error fetching user data:", error.response || error.message);
-                toast.error("Unable to load profile data. Please make sure you are logged in.");
+                navigate("/login"); // Redirect to login if token is missing
             }
         };
 
@@ -36,11 +36,6 @@ const Profile = () => {
 
     const handleUpdate = async () => {
         const token = localStorage.getItem('token');
-        if (!token) {
-            toast.error("Token not found. Please login.");
-            navigate("/login");
-            return;
-        }
         try {
             const response = await axios.put(
                 'https://secure-loging-host-server.vercel.app/users/profile',
@@ -60,18 +55,13 @@ const Profile = () => {
 
     const handleDelete = async () => {
         const token = localStorage.getItem('token');
-        if (!token) {
-            toast.error("Token not found. Please login.");
-            navigate("/login");
-            return;
-        }
         try {
             await axios.delete('https://secure-loging-host-server.vercel.app/users/profile', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success("Account deleted successfully.");
-            localStorage.removeItem('token');
-            navigate('/login');
+            localStorage.removeItem('token'); // Clear token
+            navigate('/login'); // Redirect to login page
         } catch (error) {
             console.error("Error deleting account:", error.response || error.message);
             toast.error("Failed to delete account.");
@@ -79,7 +69,7 @@ const Profile = () => {
     };
 
     const handleBack = () => {
-        navigate('/');
+        navigate('/'); // Redirect to the home page
     };
 
     return (
@@ -149,6 +139,7 @@ const styles = {
             hsl(218, 41%, 20%) 75%, 
             hsl(218, 41%, 19%) 80%, 
             transparent 100%)`,
+        position: 'relative',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -157,6 +148,7 @@ const styles = {
         backgroundColor: 'hsla(0, 0%, 100%, 0.9)',
         backdropFilter: 'saturate(200%) blur(25px)',
         borderRadius: '20px',
+        zIndex: 2,
         padding: '2rem',
         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
         width: '350px',
