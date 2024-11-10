@@ -89,7 +89,7 @@ function logAction(userId, action) {
 }
 
 // Sign-up route for new users with password hashing
-app.post("/signup", async (req, res) => {
+app.post("/Signup", async (req, res) => {
     const { name, email, password } = req.body;
     const checkUserSql = "SELECT * FROM users WHERE email = ?";
     const insertUserSql = "INSERT INTO users (name, email, password) VALUES (?)";
@@ -121,7 +121,7 @@ app.post("/signup", async (req, res) => {
 });
 
 // Sign-in route for authentication with password validation
-app.post("/signin", (req, res) => {
+app.post("/SignIn", (req, res) => {
     const { email, password } = req.body;
     const sql = "SELECT * FROM users WHERE email = ?";
 
@@ -151,7 +151,7 @@ app.post("/signin", (req, res) => {
 });
 
 // Admin login route
-app.post("/admin-login", (req, res) => {
+app.post("/Asignin", (req, res) => {
     const { email, password } = req.body;
     const sql = "SELECT * FROM admins WHERE email = ?";
 
@@ -178,10 +178,10 @@ app.post("/admin-login", (req, res) => {
             return res.status(401).json("Admin not found");
         }
     });
-});
+})
 
 // Protected route to fetch user data
-app.get("/users", authenticateToken, (req, res) => {
+app.get("/profile", authenticateToken, (req, res) => {
     const sql = "SELECT * FROM users WHERE id = ?";
 
     db.query(sql, [req.user.id], (err, data) => {
@@ -200,7 +200,7 @@ app.get("/users", authenticateToken, (req, res) => {
 });
 
 // Protected admin route
-app.get("/admin-home", authenticateToken, (req, res) => {
+app.get("/dashboard", authenticateToken, (req, res) => {
     // Check if the user is an admin
     if (req.user && req.user.email) {
         const sql = "SELECT * FROM admins WHERE email = ?";
@@ -231,7 +231,7 @@ app.post("/create-admin", async (req, res) => {
     }
 });
 
-app.listen(8086, async () => {
+app.listen(8087, async () => {
     console.log("Server is running on port 8086");
 
     // Automatically create admin user when the server starts
