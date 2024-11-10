@@ -13,7 +13,6 @@ const Profile = () => {
     useEffect(() => {
         const fetchUserData = async () => {
             const token = localStorage.getItem('token');
-            
             if (token) {
                 try {
                     const response = await axios.get('https://secure-loging-host-server.vercel.app/users/profile', {
