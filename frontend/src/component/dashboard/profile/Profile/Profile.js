@@ -15,6 +15,7 @@ const Profile = () => {
             const token = localStorage.getItem('token');
             if (token) {
                 try {
+                    // Fetch user data using the token for authorization
                     const response = await axios.get('https://secure-loging-host-server.vercel.app/users/profile', {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
