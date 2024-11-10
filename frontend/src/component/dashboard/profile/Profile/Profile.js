@@ -23,7 +23,7 @@ const Profile = () => {
                     setUpdatedName(response.data.name);
                     setUpdatedEmail(response.data.email);
                 } catch (error) {
-                    console.error("Error fetching user data:", error.response || error.message);
+                    console.error("Error  user data:", error.response || error.message);
                     toast.error("Unable to load profile data. Please make sure you are logged in.");
                 }
             } else {
