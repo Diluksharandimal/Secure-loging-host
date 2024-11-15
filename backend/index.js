@@ -3,12 +3,11 @@ const mysql = require("mysql2");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
 require('dotenv').config();
 
 const app = express();
 app.use(cors({
-    origin: '*',
+    origin: '*', // Allow requests from any origin
 }));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -36,15 +35,14 @@ db.getConnection((err, connection) => {
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
-// Function to hash and insert admin into the database
-async function createAdmin(email, plainPassword) {
+// Function to insert admin into the database without hashing password
+async function createAdmin(email, password) {
     try {
-
-        // SQL query to insert admin with hashed password
+        // SQL query to insert admin with plaintext password
         const sql = "INSERT INTO admins (email, password) VALUES (?, ?)";
 
         return new Promise((resolve, reject) => {
-            db.query(sql, [email, hashedPassword], (err, result) => {
+            db.query(sql, [email, password], (err, result) => {
                 if (err) {
                     console.error("Error inserting admin:", err);
                     reject(err);
@@ -53,7 +51,6 @@ async function createAdmin(email, plainPassword) {
                     resolve(result);
                 }
             });
-            
         });
     } catch (error) {
         console.error("Error during admin creation:", error);
@@ -86,53 +83,46 @@ function logAction(userId, action) {
     });
 }
 
-// Sign-up route for new users with password hashing
-app.post("/signup", async (req, res) => {
+// Sign-up route for new users without password hashing
+app.post("/signup", (req, res) => {
     const { name, email, password } = req.body;
     const checkUserSql = "SELECT * FROM users WHERE email = ?";
     const insertUserSql = "INSERT INTO users (name, email, password) VALUES (?)";
 
-    try {
-        // Check if the user already exists
-        db.query(checkUserSql, [email], async (err, data) => {
-            if (err) return res.status(500).json("Error checking user");
+    // Check if the user already exists
+    db.query(checkUserSql, [email], (err, data) => {
+        if (err) return res.status(500).json("Error checking user");
 
-            if (data.length > 0) {
-                return res.status(400).json("User already exists");
+        if (data.length > 0) {
+            return res.status(400).json("User already exists");
+        }
+
+        const values = [name, email, password];
+
+        // Insert user into the database without hashing password
+        db.query(insertUserSql, [values], (err) => {
+            if (err) {
+                return res.status(500).json("Error registering user");
             }
-
-            // Hash the password using bcryptjs
-            const hashedPassword = await bcrypt.hash(password, 10);
-            const values = [name, email, hashedPassword];
-
-            // Insert user into the database
-            db.query(insertUserSql, [values], (err) => {
-                if (err) {
-                    return res.status(500).json("Error registering user");
-                }
-                res.json("User Registered Successfully");
-            });
+            res.json("User Registered Successfully");
         });
-    } catch (err) {
-        res.status(500).json("Error registering user");
-    }
+    });
 });
 
-// Sign-in route for authentication with password validation
+// Sign-in route for authentication without password hashing
 app.post("/signin", (req, res) => {
     const { email, password } = req.body;
     const sql = "SELECT * FROM users WHERE email = ?";
 
-    db.query(sql, [email], async (err, data) => {
+    db.query(sql, [email], (err, data) => {
         if (err) {
             return res.status(500).json("Error");
         }
         if (data.length > 0) {
             const user = data[0];
 
-            // Compare password with the hashed password in the database
-            const isPasswordValid = await bcrypt.compare(password, user.password);
-            if (!isPasswordValid) {
+            // Compare plaintext password directly with the stored password
+            if (password !== user.password) {
                 return res.status(401).json("Invalid Credentials");
             }
 
@@ -153,16 +143,15 @@ app.post("/admin-login", (req, res) => {
     const { email, password } = req.body;
     const sql = "SELECT * FROM admins WHERE email = ?";
 
-    db.query(sql, [email], async (err, data) => {
+    db.query(sql, [email], (err, data) => {
         if (err) {
             return res.status(500).json("Error");
         }
         if (data.length > 0) {
             const admin = data[0];
 
-            // Compare password with the hashed password in the database
-            const isPasswordValid = await bcrypt.compare(password, admin.password);
-            if (!isPasswordValid) {
+            // Compare plaintext password directly with the stored password
+            if (password !== admin.password) {
                 return res.status(401).json("Invalid Credentials");
             }
 
@@ -217,11 +206,12 @@ app.get("/admin-home", authenticateToken, (req, res) => {
     }
 });
 
+// Create admin route (no hashing)
 app.post("/create-admin", async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // Call createAdmin function to insert admin with hashed password
+        // Call createAdmin function to insert admin with plaintext password
         await createAdmin(email, password);
         res.status(201).json({ message: "Admin created successfully" });
     } catch (err) {
@@ -229,26 +219,7 @@ app.post("/create-admin", async (req, res) => {
     }
 });
 
-app.listen(8086, async () => {
-    console.log("Server is running on port 8086");
-
-    // Automatically create admin user when the server starts
-    try {
-      
-        console.log("Admin created successfully on server startup");
-    } catch (err) {
-        console.error("Error creating admin:", err);
-    }
-});
-
-createAdmin("admin@gmail.com", "Admin0011");
-
-
-app.get("/", (req, res) => {
-    res.send("hello world");
-});
-
-// Start the server
-app.listen(8087, () => {
-    console.log("Server is running on port 8086");
+// Start the server on Vercel port
+app.listen(process.env.PORT || 8087, () => {
+    console.log("Server is running on port 8087");
 });
