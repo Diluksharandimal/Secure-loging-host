@@ -62,7 +62,7 @@ const SignUp = () => {
 
     if (Object.keys(validationErrors).length === 0) {
       try {
-        const response = await axios.post('https://secure-loging-host-server.vercel.app/signup', values, {
+        const response = await axios.post('https://vercel.com/diluksha-randimals-projects/secure-loging-host/signup', values, {
           headers: {
             'Content-Type': 'application/json',
           },
