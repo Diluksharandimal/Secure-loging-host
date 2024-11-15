@@ -38,7 +38,6 @@ const SignUp = () => {
       errors.email = 'Enter a valid email address';
     }
 
-    // Password validation
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!values.password) {
       errors.password = 'Password is required';
@@ -63,24 +62,27 @@ const SignUp = () => {
 
     if (Object.keys(validationErrors).length === 0) {
       try {
-        const response = await axios.post('https://secure-loging-host-server.vercel.app/SignUp', values, {
+        const response = await axios.post('https://secure-loging-host-server.vercel.app/signup', values, {
           headers: {
             'Content-Type': 'application/json',
           },
           withCredentials: true, // Required for cross-origin cookies if needed
         });
 
-        if (response.status === 201) {
-          toast.success('Registration successful! You can now login.');
+        if (response.status === 200) {
+          const { token } = response.data;
+          localStorage.setItem('token', token);
+          toast.success('Signup successful!');
+          
           setValues({
             name: '',
             email: '',
             password: '',
-            confirmPassword: '', 
+            confirmPassword: '',
           });
-          navigate('/SignIn');
+          navigate('/signin');
         } else {
-          setErrors({ general: 'Registration failed. Please try again.' });
+          setErrors({ general: 'Signup failed. Please try again.' });
         }
       } catch (error) {
         console.error('Error:', error);
@@ -236,21 +238,19 @@ const SignUp = () => {
                       {errors.confirmPassword && <p className="text-danger">{errors.confirmPassword}</p>}
                     </div>
 
-                    <button type="submit" className="btn btn-primary btn-block mb-4">
-                      Sign up
+                    {/* Submit button */}
+                    <button type="submit" className="btn btn-primary btn-block mb-4" style={{ width: '100%' }}>
+                      Sign Up
                     </button>
-
-                    <div className="text-center">
-                      <p>Already have an account? <a href="/SignIn">Sign In</a></p>
-                    </div>
                   </form>
-                  <ToastContainer />
                 </div>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      <ToastContainer />
     </div>
   );
 };

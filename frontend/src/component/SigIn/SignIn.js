@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
@@ -39,7 +41,7 @@ const SignIn = () => {
 
     setLoading(true); // Start loading
     try {
-      const response = await axios.post('https://secure-loging-host-server.vercel.app/SignIn', {
+      const response = await axios.post('https://secure-loging-host-server.vercel.app/signin', {
         email,
         password,
       });
@@ -49,13 +51,16 @@ const SignIn = () => {
         localStorage.setItem('token', token); // Store JWT token
         localStorage.setItem('userName', name); // Store user name for later use
         setError(''); // Clear error message
-        navigate('/profile'); // Redirect to dashboard
+        toast.success('Login successful!');
+        navigate('/home'); // Redirect to home page
       }
     } catch (err) {
       if (err.response && err.response.status === 401) {
         setError('Invalid email or password');
+        toast.error('Invalid email or password');
       } else {
         setError('An error occurred. Please try again.');
+        toast.error('An error occurred. Please try again.');
       }
     }
     setLoading(false); // Stop loading
@@ -80,36 +85,14 @@ const SignIn = () => {
                   hsl(218, 41%, 19%) 80%,
                   transparent 100%);
             }
-
-            #radius-shape-1 {
-              height: 220px;
-              width: 220px;
-              top: -60px;
-              left: -130px;
-              background: radial-gradient(#44006b, #ad1fff);
-              overflow: hidden;
-            }
-
-            #radius-shape-2 {
-              border-radius: 38% 62% 63% 37% / 70% 33% 67% 30%;
-              bottom: -60px;
-              right: -110px;
-              width: 300px;
-              height: 300px;
-              background: radial-gradient(#44006b, #ad1fff);
-              overflow: hidden;
-            }
-
             .bg-glass {
               background-color: hsla(0, 0%, 100%, 0.9) !important;
               backdrop-filter: saturate(200%) blur(25px);
               border-radius: 20px;
             }
-
             .form-control {
               border-radius: 10px;
             }
-
             .btn {
               border-radius: 10px;
             }
@@ -189,6 +172,8 @@ const SignIn = () => {
           </div>
         </div>
       </section>
+
+      <ToastContainer />
     </div>
   );
 };
