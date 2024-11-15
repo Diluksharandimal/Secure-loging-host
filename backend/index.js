@@ -39,8 +39,6 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 // Function to hash and insert admin into the database
 async function createAdmin(email, plainPassword) {
     try {
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
         // SQL query to insert admin with hashed password
         const sql = "INSERT INTO admins (email, password) VALUES (?, ?)";
